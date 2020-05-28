@@ -21,16 +21,17 @@ def weighted_sample(weights, m):
     elt = [(log(random()) / weights[i], i) for i in range(len(weights))]
     return ([x[1] for x in nlargest(n_to_choose, elt)])
 
-def find_tweets(api):
+def find_tweets(api, ndays=1, res_type="mixed"):
     # find original tweets (ie, not replies, not retweets, but quote tweets ok)
     # sent since yesterday
     # including the #econtwitter tag
-    yd = date.today() - timedelta(days=1)
+    yd = date.today() - timedelta(days=ndays)
     search_args = {
         "q": f"#econtwitter -filter:replies -filter:retweets since:{yd.strftime('%Y-%m-%d')}",
         "rpp": 100,
         "lang": "en",
-        "tweet_mode": "extended"
+        "tweet_mode": "extended",
+        "result_type": res_type
     }
     results = []
     for page in tweepy.Cursor(api.search, **search_args).pages():
@@ -56,9 +57,20 @@ def choose_tweets(results, n_tweets=1, max_hashtags=3):
     selected = weighted_sample(weights, n_tweets)
     return([filtered[x]["id"] for x in selected])
 
-def retweet(event, context):
+def most_popular(results, max_hashtags=3):
+    # get the important info
+    # don't filter for things we've already retweeted
+    eligible = [{"id": x.id,
+                 "score": x.retweet_count + x.favorite_count,
+                 "user": x.user.screen_name}
+                for x in results if len(x.entities["hashtags"]) <= max_hashtags]
+    logger.info(f"Found {len(eligible)} tweets to draw from")
+    top_tweet = max(eligible, key=lambda x:x["score"])
+    return(top_tweet)
+
+def retweet_random(event, context):
     api = create_api()
-    res = find_tweets(api)
+    res = find_tweets(api, ndays=1, res_type="mixed")
     to_retweet = choose_tweets(res)
     for tweet in to_retweet:
         logger.info(f"Trying to retweet {tweet}")
@@ -67,3 +79,16 @@ def retweet(event, context):
             logger.info("Success!")
         except Exception:
             logger.error("Error retweeting: %s", exc_info=True)
+
+def retweet_most_popular(event, context):
+    api = create_api()
+    res = find_tweets(api, ndays=7, res_type="mixed")
+    tweet = most_popular(res)
+    logger.info(f"Trying to retweet {tweet['id']}")
+    try:
+        api.update_status(
+            status=f"The most popular #econtwitter content this week was this from @{tweet['user']}:",
+            attachment_url=f"https://twitter.com/{tweet['user']}/status/{tweet['id']}"
+        )
+    except Exception:
+        logger.error("Error retweeting: %s", exc_info=True)

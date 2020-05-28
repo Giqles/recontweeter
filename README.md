@@ -11,6 +11,9 @@ It follows some basic rules. Tweets must:
 Among tweets matching the above criteria, the bot does a weighted random sample
 according to the number of favourites and retweets the tweets have already received.
 
+It also retweets the most popular tweet in the last 7 days on a Friday morning at 9:30 UTC time. 
+Popularity is defined as likes + retweets.
+
 ## Background
 
 This set up isn't particularly original! You'll find lots of guides online on how
@@ -28,7 +31,6 @@ If you want to run one of these yourself, you'll need:
 * To apply for a Twitter developer account
 
 Beyond that you'll obviously need python installed, and node installed.
-installed.
 
 ### Python config
 
@@ -91,14 +93,15 @@ With everything installed, it should be a case of running (from the root directo
 serverless deploy -v
 ```
 
-To deploy to your AWS account. If you don't want to wait two hours for the function to
-fire, run:
+To deploy to your AWS account. If you don't want to wait two hours or until Friday mornings for the 
+functions to fire run:
 
 ```bash
 serverless invoke -f retweet
+serverless invoke -f popular
 ```
 
-And if you want to delete it from your AWS account:
+And if you want to delete the app from your from your AWS account:
 
 ```bash
 serverless remove

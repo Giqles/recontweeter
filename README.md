@@ -11,6 +11,9 @@ It follows some basic rules. Tweets must:
 Among tweets matching the above criteria, the bot does a weighted random sample
 according to the number of favourites and retweets the tweets have already received.
 
+It also retweets the most popular tweet in the last 7 days on a Friday morning, UTC time. Popularity 
+is defined as likes + retweets.
+
 ## Background
 
 This set up isn't particularly original! You'll find lots of guides online on how
@@ -96,6 +99,7 @@ fire, run:
 
 ```bash
 serverless invoke -f retweet
+serverless invoke -f popular
 ```
 
 And if you want to delete it from your AWS account:

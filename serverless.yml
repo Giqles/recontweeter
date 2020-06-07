@@ -14,7 +14,7 @@ functions:
   popular:
     handler: retweet.retweet_most_popular
     events:
-      - schedule: cron(30 9 ? * 6L *)
+      - schedule: cron(30 9 ? * 6 *)
     timeout: 30
 
 plugins:
